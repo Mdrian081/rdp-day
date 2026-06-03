@@ -86,7 +86,7 @@ jobs:
 
           # নির্ধারিত পাসওয়ার্ড ও ইউজারনেম
           $password = "Riyan212"
-          $username = "AISTV-PREMIUM"
+          $username = "RIYAN"
 
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
 
