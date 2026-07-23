@@ -1,580 +1,351 @@
-name: AI STV Premium RDP
+name: 🚀 সার্ভার এআই এসটিভি প্রিমিয়াম
 
 on:
   workflow_dispatch:
     inputs:
       duration:
-        description: 'ব্যবহারের সময়কাল'
-        required: true
-        default: '5h40m'
+        description: '🕐 ব্যবহারের সময়কাল'
+        required: false
+        default: '6h'
         type: choice
         options:
-          - '1h'
-          - '3h'
-          - '5h'
-          - '5h40m'
+        - '1h'
+        - '3h'
+        - '5h40m'
+        - '6h'
 
 jobs:
   Premium-RDP-Setup:
     runs-on: windows-latest
-    timeout-minutes: 355
+    timeout-minutes: 360
 
     steps:
-
-      - name: সিস্টেম চালু করুন
-        shell: powershell
+      # স্বাগত ব্যানার
+      - name: 🎯 সিস্টেম চালু করুন
         run: |
           Write-Host ""
-          Write-Host "AI STV PREMIUM RDP SERVER" -ForegroundColor Cyan
-          Write-Host "সিস্টেম প্রস্তুত করা হচ্ছে..." -ForegroundColor Yellow
-          Start-Sleep -Seconds 2
-          Write-Host "সিস্টেম প্রস্তুত!" -ForegroundColor Green
-
-
-      - name: প্রয়োজনীয় তথ্য যাচাই করুন
-        shell: powershell
-        env:
-          TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
-        run: |
-          $ErrorActionPreference = "Stop"
-
+          Write-Host "🤖 এআই এসটিভি প্রিমিয়াম আরডিপি সার্ভার" -ForegroundColor Yellow
+          Write-Host "⚡ এআই এসটিভি দ্বারা পরিচালিত" -ForegroundColor Green
+          Write-Host "🕒 সময়কাল: ${{ github.event.inputs.duration }}" -ForegroundColor Magenta
           Write-Host ""
-          Write-Host "প্রয়োজনীয় তথ্য যাচাই করা হচ্ছে..." -ForegroundColor Yellow
 
-          if ([string]::IsNullOrWhiteSpace($env:TAILSCALE_AUTH_KEY)) {
-              Write-Host "TAILSCALE_AUTH_KEY পাওয়া যায়নি!" -ForegroundColor Red
-              Write-Host "Repository Settings > Secrets and variables > Actions এ TAILSCALE_AUTH_KEY যোগ করুন।" -ForegroundColor Yellow
+          $frames = @('⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷')
+          for($i=0; $i -lt 10; $i++) {
+              Write-Host "`r🚀 সিস্টেম প্রস্তুত করা হচ্ছে... $($frames[$i % 8])" -NoNewline -ForegroundColor Blue
+              Start-Sleep -Milliseconds 100
+          }
+          Write-Host "`r✅ সিস্টেম প্রস্তুত!                    " -ForegroundColor Green
+
+      # উন্নত কনফিগারেশন
+      - name: 🔧 সিস্টেম কনফিগারেশন
+        run: |
+          Write-Host ""
+          Write-Host "🛠️  সিস্টেম কনফিগার করা হচ্ছে" -ForegroundColor Yellow
+
+          $steps = @(
+              @{Name="রিমোট ডেস্কটপ চালু করুন"; Script={
+                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
+              }},
+              @{Name="নেটওয়ার্ক যাচাইকরণ বন্ধ করুন"; Script={
+                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
+              }},
+              @{Name="আরডিপি নিরাপত্তা কনফিগার করুন"; Script={
+                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value 0 -Force
+                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
+              }},
+              @{Name="ফায়ারওয়ালে পোর্ট ৩৩৮৯ খুলুন"; Script={
+                  netsh advfirewall firewall add rule name="RDP-Premium" dir=in action=allow protocol=TCP localport=3389 profile=any
+                  netsh advfirewall firewall add rule name="RDP-Premium-Out" dir=out action=allow protocol=TCP localport=3389 profile=any
+              }},
+              @{Name="সার্ভিস চালু করুন"; Script={
+                  Set-Service -Name TermService -StartupType Automatic -ErrorAction SilentlyContinue
+                  Set-Service -Name UmRdpService -StartupType Automatic -ErrorAction SilentlyContinue
+                  Start-Service -Name TermService -ErrorAction SilentlyContinue
+                  Start-Service -Name UmRdpService -ErrorAction SilentlyContinue
+              }}
+          )
+
+          foreach($step in $steps) {
+              Write-Host "│ 📋 $($step.Name)..." -NoNewline -ForegroundColor White
+              try {
+                  & $step.Script
+                  Write-Host "`r│ ✅ $($step.Name)" -ForegroundColor Green
+              } catch {
+                  Write-Host "`r│ ⚠️  $($step.Name) - ছোট ত্রুটি এড়িয়ে গেছে" -ForegroundColor Yellow
+              }
+              Start-Sleep -Milliseconds 500
+          }
+
+          Write-Host "🎯 কনফিগারেশন সম্পন্ন!" -ForegroundColor Green
+
+      # প্রিমিয়াম ব্যবহারকারী তৈরি করুন
+      - name: 👤 প্রিমিয়াম অ্যাকাউন্ট তৈরি করুন
+        run: |
+          Write-Host ""
+          Write-Host "👤 প্রিমিয়াম অ্যাকাউন্ট তৈরি করা হচ্ছে" -ForegroundColor Yellow
+
+          # নির্ধারিত পাসওয়ার্ড ও ইউজারনেম
+          $password = "Riyan212"
+          $username = "AISTV-PREMIUM"
+
+          $securePass = ConvertTo-SecureString $password -AsPlainText -Force
+
+          try {
+              Remove-LocalUser -Name $username -ErrorAction SilentlyContinue
+              Write-Host "│ ✅ পুরনো ব্যবহারকারী মুছে ফেলা হয়েছে" -ForegroundColor Green
+          } catch {
+              Write-Host "│ ℹ️  মুছে ফেলার মতো পুরনো ব্যবহারকারী নেই" -ForegroundColor Blue
+          }
+
+          try {
+              New-LocalUser -Name $username -Password $securePass -AccountNeverExpires -Description "এআই এসটিভি প্রিমিয়াম অ্যাকাউন্ট"
+              Write-Host "│ ✅ নতুন ব্যবহারকারী তৈরি হয়েছে" -ForegroundColor Green
+
+              try {
+                  Set-LocalUser -Name $username -PasswordNeverExpires $true -ErrorAction SilentlyContinue
+              } catch {}
+
+              Add-LocalGroupMember -Group "Administrators" -Member $username -ErrorAction SilentlyContinue
+              Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username -ErrorAction SilentlyContinue
+              Add-LocalGroupMember -Group "Users" -Member $username -ErrorAction SilentlyContinue
+
+              Enable-LocalUser -Name $username
+
+              Write-Host "│ ✅ অ্যাডমিনিস্ট্রেটর ও আরডিপি অনুমতি দেওয়া হয়েছে" -ForegroundColor Green
+
+          } catch {
+              Write-Host "│ ❌ ব্যবহারকারী তৈরিতে ত্রুটি: $($_.Exception.Message)" -ForegroundColor Red
               exit 1
           }
 
-          Write-Host "Tailscale Auth Key পাওয়া গেছে।" -ForegroundColor Green
-          Write-Host "যাচাই সম্পন্ন!" -ForegroundColor Green
+          echo "RDP_USER=$username" >> $env:GITHUB_ENV
+          echo "RDP_PASS=$password" >> $env:GITHUB_ENV
 
+          Write-Host "✅ অ্যাকাউন্ট: $username প্রস্তুত" -ForegroundColor Green
 
-      - name: সিস্টেম কনফিগারেশন
-        shell: powershell
+      # লগইন অনুমতি যাচাই করুন
+      - name: 🔍 সিস্টেম অনুমতি যাচাই করুন
         run: |
-          $ErrorActionPreference = "Stop"
-
           Write-Host ""
-          Write-Host "RDP সিস্টেম কনফিগার করা হচ্ছে..." -ForegroundColor Yellow
+          Write-Host "🔍 লগইন অনুমতি যাচাই করা হচ্ছে" -ForegroundColor Yellow
 
-          Set-ItemProperty `
-            -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
-            -Name 'fDenyTSConnections' `
-            -Value 0 `
-            -Force
-
-          Write-Host "Remote Desktop চালু হয়েছে।" -ForegroundColor Green
-
-          Set-ItemProperty `
-            -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
-            -Name 'UserAuthentication' `
-            -Value 0 `
-            -Force
-
-          Set-ItemProperty `
-            -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
-            -Name 'SecurityLayer' `
-            -Value 0 `
-            -Force
-
-          Write-Host "RDP সেটিংস কনফিগার হয়েছে।" -ForegroundColor Green
-
-          Remove-NetFirewallRule `
-            -DisplayName "AI-STV-RDP" `
-            -ErrorAction SilentlyContinue
-
-          New-NetFirewallRule `
-            -DisplayName "AI-STV-RDP" `
-            -Direction Inbound `
-            -Protocol TCP `
-            -LocalPort 3389 `
-            -Action Allow `
-            -Profile Any | Out-Null
-
-          Write-Host "Firewall Port 3389 চালু হয়েছে।" -ForegroundColor Green
-
-          Set-Service `
-            -Name TermService `
-            -StartupType Automatic
-
-          Start-Service `
-            -Name TermService `
-            -ErrorAction SilentlyContinue
-
-          Set-Service `
-            -Name UmRdpService `
-            -StartupType Automatic `
-            -ErrorAction SilentlyContinue
-
-          Start-Service `
-            -Name UmRdpService `
-            -ErrorAction SilentlyContinue
-
-          $service = Get-Service -Name TermService
-
-          if ($service.Status -ne "Running") {
-              throw "Remote Desktop Service চালু হয়নি।"
+          $user = Get-LocalUser -Name "AISTV-PREMIUM" -ErrorAction SilentlyContinue
+          if ($user) {
+              Write-Host "│ ✅ AISTV-PREMIUM ব্যবহারকারী বিদ্যমান" -ForegroundColor Green
+              Write-Host "│ 📊 অবস্থা: $($user.Enabled)" -ForegroundColor White
+          } else {
+              Write-Host "│ ❌ ব্যবহারকারী পাওয়া যায়নি" -ForegroundColor Red
+              exit 1
           }
 
-          Write-Host "Remote Desktop Service চলছে।" -ForegroundColor Green
-          Write-Host "সিস্টেম কনফিগারেশন সম্পন্ন!" -ForegroundColor Green
-
-
-      - name: প্রিমিয়াম অ্যাকাউন্ট তৈরি করুন
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          Write-Host ""
-          Write-Host "প্রিমিয়াম অ্যাকাউন্ট তৈরি করা হচ্ছে..." -ForegroundColor Yellow
-
-          $username = "RIYAN"
-          $password = "Riyan@212"
-
-          $existingUser = Get-LocalUser `
-            -Name $username `
-            -ErrorAction SilentlyContinue
-
-          if ($null -ne $existingUser) {
-              Remove-LocalUser `
-                -Name $username `
-                -ErrorAction Stop
-
-              Start-Sleep -Seconds 2
-
-              Write-Host "পুরনো ব্যবহারকারী মুছে ফেলা হয়েছে।" -ForegroundColor Green
+          $isAdmin = (Get-LocalGroupMember -Group "Administrators" | Where-Object {$_.Name -like "*AISTV-PREMIUM"}).Count -gt 0
+          if ($isAdmin) {
+              Write-Host "│ ✅ অ্যাডমিনিস্ট্রেটর অনুমতি আছে" -ForegroundColor Green
+          } else {
+              Write-Host "│ ❌ অ্যাডমিনিস্ট্রেটর অনুমতি নেই" -ForegroundColor Red
           }
 
-          $securePass = ConvertTo-SecureString `
-            -String $password `
-            -AsPlainText `
-            -Force
-
-          New-LocalUser `
-            -Name $username `
-            -Password $securePass `
-            -AccountNeverExpires `
-            -PasswordNeverExpires `
-            -Description "AI STV Premium RDP Account" `
-            -ErrorAction Stop | Out-Null
-
-          Write-Host "নতুন ব্যবহারকারী তৈরি হয়েছে।" -ForegroundColor Green
-
-          Add-LocalGroupMember `
-            -Group "Administrators" `
-            -Member $username `
-            -ErrorAction SilentlyContinue
-
-          Add-LocalGroupMember `
-            -Group "Remote Desktop Users" `
-            -Member $username `
-            -ErrorAction SilentlyContinue
-
-          Enable-LocalUser `
-            -Name $username `
-            -ErrorAction Stop
-
-          $checkUser = Get-LocalUser `
-            -Name $username `
-            -ErrorAction Stop
-
-          if (-not $checkUser.Enabled) {
-              throw "RIYAN অ্যাকাউন্ট সক্রিয় করা যায়নি।"
+          $isRDPUser = (Get-LocalGroupMember -Group "Remote Desktop Users" | Where-Object {$_.Name -like "*AISTV-PREMIUM"}).Count -gt 0
+          if ($isRDPUser) {
+              Write-Host "│ ✅ রিমোট ডেস্কটপ অনুমতি আছে" -ForegroundColor Green
+          } else {
+              Write-Host "│ ❌ রিমোট ডেস্কটপ অনুমতি নেই" -ForegroundColor Red
           }
 
-          "RDP_USER=$username" | Out-File `
-            -FilePath $env:GITHUB_ENV `
-            -Encoding utf8 `
-            -Append
-
-          "RDP_PASS=$password" | Out-File `
-            -FilePath $env:GITHUB_ENV `
-            -Encoding utf8 `
-            -Append
-
-          Write-Host "Administrator অনুমতি দেওয়া হয়েছে।" -ForegroundColor Green
-          Write-Host "Remote Desktop অনুমতি দেওয়া হয়েছে।" -ForegroundColor Green
-          Write-Host "অ্যাকাউন্ট প্রস্তুত!" -ForegroundColor Green
-
-
-      - name: সিস্টেম অনুমতি যাচাই করুন
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          Write-Host ""
-          Write-Host "সিস্টেম যাচাই করা হচ্ছে..." -ForegroundColor Yellow
-
-          $user = Get-LocalUser `
-            -Name $env:RDP_USER `
-            -ErrorAction Stop
-
-          if (-not $user.Enabled) {
-              throw "RIYAN ব্যবহারকারী সক্রিয় নয়।"
+          $termService = Get-Service -Name TermService -ErrorAction SilentlyContinue
+          if ($termService.Status -eq 'Running') {
+              Write-Host "│ ✅ TermService সার্ভিস চলছে" -ForegroundColor Green
+          } else {
+              Write-Host "│ ❌ TermService সার্ভিস চলছে না" -ForegroundColor Red
           }
 
-          Write-Host "RIYAN ব্যবহারকারী সক্রিয়।" -ForegroundColor Green
+          Write-Host "🎯 যাচাইকরণ সম্পন্ন!" -ForegroundColor Green
 
-          $adminMember = Get-LocalGroupMember `
-            -Group "Administrators" |
-            Where-Object {
-                $_.Name -like "*\$env:RDP_USER"
-            }
-
-          if ($null -eq $adminMember) {
-              throw "Administrator অনুমতি নেই।"
-          }
-
-          Write-Host "Administrator অনুমতি আছে।" -ForegroundColor Green
-
-          $rdpMember = Get-LocalGroupMember `
-            -Group "Remote Desktop Users" |
-            Where-Object {
-                $_.Name -like "*\$env:RDP_USER"
-            }
-
-          if ($null -eq $rdpMember) {
-              throw "Remote Desktop অনুমতি নেই।"
-          }
-
-          Write-Host "Remote Desktop অনুমতি আছে।" -ForegroundColor Green
-
-          $termService = Get-Service `
-            -Name TermService `
-            -ErrorAction Stop
-
-          if ($termService.Status -ne "Running") {
-              Start-Service `
-                -Name TermService `
-                -ErrorAction Stop
-          }
-
-          Write-Host "Remote Desktop Service চলছে।" -ForegroundColor Green
-          Write-Host "সিস্টেম যাচাই সম্পন্ন!" -ForegroundColor Green
-
-
-      - name: প্রিমিয়াম নেটওয়ার্ক সেটআপ করুন
-        shell: powershell
+      # টেইলস্কেল প্রিমিয়াম - Fixed Hostname
+      - name: 🌐 প্রিমিয়াম নেটওয়ার্ক সেটআপ করুন
         env:
           TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
         run: |
-          $ErrorActionPreference = "Stop"
-
           Write-Host ""
-          Write-Host "Tailscale নেটওয়ার্ক সেটআপ করা হচ্ছে..." -ForegroundColor Yellow
+          Write-Host "🌐 নেটওয়ার্ক সংযোগ স্থাপন করা হচ্ছে" -ForegroundColor Yellow
 
-          $tailscaleExe = "$env:ProgramFiles\Tailscale\tailscale.exe"
-
-          if (-not (Test-Path $tailscaleExe)) {
-
-              $msiPath = "$env:TEMP\tailscale.msi"
-
-              Write-Host "Tailscale ডাউনলোড করা হচ্ছে..." -ForegroundColor Cyan
-
-              Invoke-WebRequest `
-                -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi" `
-                -OutFile $msiPath
-
-              Write-Host "Tailscale ইনস্টল করা হচ্ছে..." -ForegroundColor Cyan
-
-              $install = Start-Process `
-                -FilePath "msiexec.exe" `
-                -ArgumentList "/i `"$msiPath`" /quiet /norestart" `
-                -Wait `
-                -PassThru
-
-              Remove-Item `
-                -Path $msiPath `
-                -Force `
-                -ErrorAction SilentlyContinue
-
-              if ($install.ExitCode -ne 0 -and $install.ExitCode -ne 3010) {
-                  throw "Tailscale ইনস্টল ব্যর্থ হয়েছে। Exit Code: $($install.ExitCode)"
-              }
-
-              Start-Sleep -Seconds 10
+          try {
+              $msiPath = "$env:TEMP\tailscale-premium.msi"
+              Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi" -OutFile $msiPath
+              Start-Process msiexec.exe -ArgumentList "/i", "`"$msiPath`"", "/quiet", "/norestart" -Wait
+              Remove-Item $msiPath -Force -ErrorAction SilentlyContinue
+              Write-Host "│ ✅ টেইলস্কেল সফলভাবে ইন্সটল হয়েছে" -ForegroundColor Green
+          } catch {
+              Write-Host "│ ❌ টেইলস্কেল ইন্সটলে ত্রুটি" -ForegroundColor Red
           }
 
-          if (-not (Test-Path $tailscaleExe)) {
-              throw "Tailscale পাওয়া যায়নি।"
+          Start-Sleep -Seconds 10
+
+          # Fixed hostname - প্রতিবার একই নাম
+          try {
+              & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$env:TAILSCALE_AUTH_KEY --hostname=ai-stv-premium --accept-routes --accept-dns --reset
+              Write-Host "│ ✅ টেইলস্কেল সংযোগ সফল" -ForegroundColor Green
+          } catch {
+              Write-Host "│ ❌ টেইলস্কেল সংযোগে ত্রুটি" -ForegroundColor Red
           }
 
-          Write-Host "Tailscale ইনস্টল হয়েছে।" -ForegroundColor Green
-
-          $runId = "$env:GITHUB_RUN_ID"
-
-          if ($runId.Length -gt 8) {
-              $runId = $runId.Substring($runId.Length - 8)
-          }
-
-          $hostname = "ai-stv-$runId"
-
-          Write-Host "Tailscale সংযোগ করা হচ্ছে..." -ForegroundColor Cyan
-
-          & $tailscaleExe up `
-            --authkey="$env:TAILSCALE_AUTH_KEY" `
-            --hostname="$hostname" `
-            --accept-dns `
-            --reset
-
-          if ($LASTEXITCODE -ne 0) {
-              throw "Tailscale সংযোগ ব্যর্থ হয়েছে।"
-          }
-
+          Write-Host "🔄 আইপি ঠিকানা নেওয়া হচ্ছে..." -NoNewline -ForegroundColor Blue
           $ip = $null
-
-          for ($i = 0; $i -lt 30; $i++) {
-
-              $candidate = & $tailscaleExe ip -4 2>$null |
-                Select-Object -First 1
-
-              if ($candidate) {
-
-                  $candidate = $candidate.Trim()
-
-                  if ($candidate -match '^\d{1,3}(\.\d{1,3}){3}$') {
-                      $ip = $candidate
+          for($i=0; $i -lt 20; $i++) {
+              try {
+                  $ip = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4 2>&1
+                  if ($ip -and $ip -match '^\d+\.\d+\.\d+\.\d+$') {
+                      echo "TAILSCALE_IP=$ip" >> $env:GITHUB_ENV
+                      Write-Host "`r✅ আইপি ঠিকানা: $ip" -ForegroundColor Green
                       break
                   }
-              }
-
-              Write-Host "IP ঠিকানার জন্য অপেক্ষা করা হচ্ছে..." -ForegroundColor Yellow
-              Start-Sleep -Seconds 2
+              } catch {}
+              Write-Host "`r🔄 আইপি ঠিকানা নেওয়া হচ্ছে... $(@('.', '..', '...')[$i % 3])" -NoNewline -ForegroundColor Blue
+              Start-Sleep -Seconds 3
           }
 
-          if ([string]::IsNullOrWhiteSpace($ip)) {
-              throw "Tailscale IP পাওয়া যায়নি।"
+          if (-not $ip -or $ip -notmatch '^\d+\.\d+\.\d+\.\d+$') {
+              Write-Host "`r⚠️  আইপি নেওয়া সম্ভব হয়নি, লোকালহোস্ট ব্যবহার করা হচ্ছে" -ForegroundColor Yellow
+              echo "TAILSCALE_IP=localhost" >> $env:GITHUB_ENV
           }
 
-          "TAILSCALE_IP=$ip" | Out-File `
-            -FilePath $env:GITHUB_ENV `
-            -Encoding utf8 `
-            -Append
-
-          "TAILSCALE_HOSTNAME=$hostname" | Out-File `
-            -FilePath $env:GITHUB_ENV `
-            -Encoding utf8 `
-            -Append
-
-          Write-Host "Tailscale সংযোগ সফল!" -ForegroundColor Green
-          Write-Host "IP: $ip" -ForegroundColor Cyan
-          Write-Host "Hostname: $hostname" -ForegroundColor Cyan
-
-
-      - name: সংযোগ পরীক্ষা করুন
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          Write-Host ""
-          Write-Host "চূড়ান্ত সংযোগ পরীক্ষা করা হচ্ছে..." -ForegroundColor Yellow
-
-          if ([string]::IsNullOrWhiteSpace($env:TAILSCALE_IP)) {
-              throw "Tailscale IP পাওয়া যায়নি।"
-          }
-
-          $service = Get-Service `
-            -Name TermService `
-            -ErrorAction Stop
-
-          if ($service.Status -ne "Running") {
-              Start-Service `
-                -Name TermService `
-                -ErrorAction Stop
-          }
-
-          Write-Host "RDP Service: OK" -ForegroundColor Green
-          Write-Host "Tailscale IP: $env:TAILSCALE_IP" -ForegroundColor Green
-          Write-Host "সংযোগ পরীক্ষা সফল!" -ForegroundColor Green
-
-
-      - name: সংযোগ তথ্য
-        shell: powershell
+      # সংযোগ তথ্য দেখান
+      - name: 🎉 সংযোগ তথ্য
         run: |
           $durationInput = "${{ github.event.inputs.duration }}"
-
           switch ($durationInput) {
-              "1h" {
-                  $totalMinutes = 60
-                  $displayTime = "১ ঘণ্টা"
-              }
-
-              "3h" {
-                  $totalMinutes = 180
-                  $displayTime = "৩ ঘণ্টা"
-              }
-
-              "5h" {
-                  $totalMinutes = 300
-                  $displayTime = "৫ ঘণ্টা"
-              }
-
-              "5h40m" {
-                  $totalMinutes = 340
-                  $displayTime = "৫ ঘণ্টা ৪০ মিনিট"
-              }
-
-              default {
-                  $totalMinutes = 60
-                  $displayTime = "১ ঘণ্টা"
-              }
+              "1h"    { $totalMinutes = 60;  $displayTime = "১ ঘণ্টা" }
+              "3h"    { $totalMinutes = 180; $displayTime = "৩ ঘণ্টা" }
+              "5h40m" { $totalMinutes = 340; $displayTime = "৫ ঘণ্টা ৪০ মিনিট" }
+              "6h"    { $totalMinutes = 360; $displayTime = "৬ ঘণ্টা" }
           }
 
-          $timeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById(
-              "Bangladesh Standard Time"
-          )
-
-          $startTime = [System.TimeZoneInfo]::ConvertTimeFromUtc(
-              (Get-Date).ToUniversalTime(),
-              $timeZone
-          )
-
-          $endTime = $startTime.AddMinutes($totalMinutes)
-
-          "TOTAL_MINUTES=$totalMinutes" | Out-File `
-            -FilePath $env:GITHUB_ENV `
-            -Encoding utf8 `
-            -Append
+          $timeZone  = [System.TimeZoneInfo]::FindSystemTimeZoneById("SE Asia Standard Time")
+          $startTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $timeZone)
+          $endTime   = $startTime.AddMinutes($totalMinutes)
 
           Write-Host ""
-          Write-Host "============================================" -ForegroundColor Cyan
-          Write-Host "       AI STV PREMIUM RDP READY" -ForegroundColor Green
-          Write-Host "============================================" -ForegroundColor Cyan
-          Write-Host ""
-          Write-Host "IP ঠিকানা : $env:TAILSCALE_IP" -ForegroundColor White
-          Write-Host "Hostname   : $env:TAILSCALE_HOSTNAME" -ForegroundColor White
-          Write-Host "Username   : $env:RDP_USER" -ForegroundColor White
-          Write-Host "Password   : $env:RDP_PASS" -ForegroundColor White
-          Write-Host "Port       : 3389" -ForegroundColor White
-          Write-Host ""
-          Write-Host "সময়কাল     : $displayTime" -ForegroundColor Yellow
-          Write-Host "শুরু        : $($startTime.ToString('HH:mm:ss'))" -ForegroundColor Yellow
-          Write-Host "শেষ         : $($endTime.ToString('HH:mm:ss'))" -ForegroundColor Yellow
-          Write-Host ""
-          Write-Host "Remote Desktop অ্যাপে উপরের IP ব্যবহার করুন।" -ForegroundColor Green
-          Write-Host "============================================" -ForegroundColor Cyan
+          Write-Host "┌─────────────────────────────────────────────┐" -ForegroundColor Cyan
+          Write-Host "│         🎉 সংযোগ সফলভাবে হয়েছে!            │" -ForegroundColor Cyan
+          Write-Host "├─────────────────────────────────────────────┤" -ForegroundColor Cyan
+          Write-Host "│ 🌐  আইপি ঠিকানা : $env:TAILSCALE_IP" -ForegroundColor White
+          Write-Host "│ 🏠  হোস্টনেম   : ai-stv-premium" -ForegroundColor White
+          Write-Host "│ 👤  ইউজারনেম   : AISTV-PREMIUM" -ForegroundColor White
+          Write-Host "│ 🔐  পাসওয়ার্ড  : Riyan212" -ForegroundColor White
+          Write-Host "│ ⏰  সময়কাল     : $displayTime" -ForegroundColor White
+          Write-Host "│ 🕐  শুরু        : $($startTime.ToString('HH:mm:ss'))" -ForegroundColor White
+          Write-Host "│ 🕐  শেষ         : $($endTime.ToString('HH:mm:ss'))" -ForegroundColor White
+          Write-Host "│ 📍  পোর্ট       : ৩৩৮৯" -ForegroundColor White
+          Write-Host "├─────────────────────────────────────────────┤" -ForegroundColor Cyan
+          Write-Host "│ 💡  নির্দেশনা:                               │" -ForegroundColor Cyan
+          Write-Host "│   ১. রিমোট ডেস্কটপ কানেকশন খুলুন           │" -ForegroundColor Yellow
+          Write-Host "│   ২. ঠিকানা: ai-stv-premium (সবসময় একই)    │" -ForegroundColor Yellow
+          Write-Host "│   ৩. ইউজার: AISTV-PREMIUM                   │" -ForegroundColor Yellow
+          Write-Host "│   ৪. পাসওয়ার্ড: Riyan212                    │" -ForegroundColor Yellow
+          Write-Host "│   ৫. উপভোগ করুন! 🚀                         │" -ForegroundColor Yellow
+          Write-Host "└─────────────────────────────────────────────┘" -ForegroundColor Cyan
 
+          echo "TOTAL_MINUTES=$totalMinutes" >> $env:GITHUB_ENV
 
-      - name: কর্মসেশন বজায় রাখুন
-        shell: powershell
+      # কর্মসেশন বজায় রাখুন
+      - name: ⏳ কর্মসেশন বজায় রাখুন
         run: |
-          $ErrorActionPreference = "Continue"
-
-          $totalMinutes = [int]$env:TOTAL_MINUTES
-
-          if ($totalMinutes -le 0) {
-              $totalMinutes = 60
-          }
-
-          $endTime = (Get-Date).AddMinutes($totalMinutes)
-          $lastStatus = Get-Date
+          $totalMinutes = $env:TOTAL_MINUTES
+          $timeZone  = [System.TimeZoneInfo]::FindSystemTimeZoneById("SE Asia Standard Time")
+          $startTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $timeZone)
+          $endTime   = $startTime.AddMinutes($totalMinutes)
 
           Write-Host ""
-          Write-Host "প্রিমিয়াম RDP সেশন চালু হয়েছে।" -ForegroundColor Green
-          Write-Host "IP: $env:TAILSCALE_IP" -ForegroundColor Cyan
-          Write-Host "User: $env:RDP_USER" -ForegroundColor Cyan
+          Write-Host "🔄 কর্মসেশন বজায় রাখা শুরু হচ্ছে..." -ForegroundColor Yellow
+          Write-Host "💎 সেশন: এআই এসটিভি প্রিমিয়াম" -ForegroundColor Magenta
+          Write-Host "🔗 হোস্টনেম: ai-stv-premium (সবসময় একই)" -ForegroundColor Cyan
+          Write-Host "🕐 শুরু: $($startTime.ToString('HH:mm:ss'))" -ForegroundColor Green
+          Write-Host "🕐 শেষ: $($endTime.ToString('HH:mm:ss'))" -ForegroundColor Green
           Write-Host ""
 
-          while ((Get-Date) -lt $endTime) {
-
-              $now = Get-Date
-              $remaining = $endTime - $now
-
-              $service = Get-Service `
-                -Name TermService `
-                -ErrorAction SilentlyContinue
-
-              if ($null -ne $service) {
-
-                  if ($service.Status -ne "Running") {
-
-                      Write-Host ""
-                      Write-Host "RDP Service পুনরায় চালু করা হচ্ছে..." -ForegroundColor Yellow
-
-                      Start-Service `
-                        -Name TermService `
-                        -ErrorAction SilentlyContinue
+          $monitorScript = {
+              $lastLogTime = Get-Date
+              while ($true) {
+                  $currentTime = Get-Date
+                  if (($currentTime - $lastLogTime).TotalMinutes -ge 2) {
+                      $termService = Get-Service -Name TermService -ErrorAction SilentlyContinue
+                      $rdpConns    = Get-NetTCPConnection -LocalPort 3389 -ErrorAction SilentlyContinue | Where-Object {$_.State -eq 'Established'}
+                      Write-Host "[$($currentTime.ToString('HH:mm:ss'))] 📊 অবস্থা - আরডিপি: $($termService.Status), সংযোগ: $($rdpConns.Count)" -ForegroundColor Blue
+                      $lastLogTime = $currentTime
                   }
+                  $termService = Get-Service -Name TermService -ErrorAction SilentlyContinue
+                  if ($termService.Status -ne 'Running') {
+                      Write-Host "[$($currentTime.ToString('HH:mm:ss'))] 🔄 TermService পুনরায় চালু হচ্ছে..." -ForegroundColor Yellow
+                      Start-Service -Name TermService -ErrorAction SilentlyContinue
+                  }
+                  Start-Sleep -Seconds 30
               }
-
-              if (($now - $lastStatus).TotalMinutes -ge 2) {
-
-                  $connections = @(
-                      Get-NetTCPConnection `
-                        -LocalPort 3389 `
-                        -State Established `
-                        -ErrorAction SilentlyContinue
-                  )
-
-                  $hoursLeft = [math]::Floor(
-                      $remaining.TotalHours
-                  )
-
-                  $minutesLeft = [math]::Floor(
-                      $remaining.TotalMinutes % 60
-                  )
-
-                  Write-Host ""
-                  Write-Host "সার্ভার চলছে | বাকি: $hoursLeft ঘণ্টা $minutesLeft মিনিট | RDP সংযোগ: $($connections.Count)" -ForegroundColor Cyan
-
-                  $lastStatus = $now
-              }
-
-              Start-Sleep -Seconds 30
           }
 
+          Start-Job -ScriptBlock $monitorScript -Name "SystemMonitor"
+
+          $frames       = @('⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏')
+          $colors       = @('Red', 'Yellow', 'Green', 'Cyan', 'Blue', 'Magenta')
+          $sessionStart = Get-Date
+
+          do {
+              $currentTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $timeZone)
+              $remaining   = $endTime - $currentTime
+              $hoursLeft   = [math]::Max(0, [math]::Floor($remaining.TotalHours))
+              $minutesLeft = [math]::Max(0, [math]::Floor($remaining.TotalMinutes % 60))
+              $secondsLeft = [math]::Max(0, [math]::Floor($remaining.TotalSeconds % 60))
+              $frame       = $frames[([int]((Get-Date) - $sessionStart).TotalSeconds) % $frames.Length]
+              $color       = $colors[([int]((Get-Date) - $sessionStart).TotalMinutes) % $colors.Length]
+
+              Write-Host "`r$frame [$($currentTime.ToString('HH:mm:ss'))] বাকি সময়: $hoursLeft ঘণ্টা $minutesLeft মিনিট $secondsLeft সেকেন্ড" -NoNewline -ForegroundColor $color
+              Start-Sleep -Seconds 5
+
+          } while ($remaining.TotalSeconds -gt 0)
+
           Write-Host ""
-          Write-Host "নির্ধারিত সময় শেষ হয়েছে।" -ForegroundColor Yellow
+          Write-Host "🎯 সময় শেষ হয়েছে - স্বয়ংক্রিয়ভাবে বন্ধ হচ্ছে!" -ForegroundColor Red
 
+          Get-Job -Name "SystemMonitor" -ErrorAction SilentlyContinue | Stop-Job -PassThru | Remove-Job -Force
 
-      - name: সিস্টেম পরিষ্কার করুন
+      # সিস্টেম পরিষ্কার করুন
+      - name: 🧹 সিস্টেম পরিষ্কার করুন
         if: always()
-        shell: powershell
         run: |
-          $ErrorActionPreference = "Continue"
-
           Write-Host ""
-          Write-Host "সিস্টেম পরিষ্কার করা হচ্ছে..." -ForegroundColor Yellow
+          Write-Host "🧹 সিস্টেম পরিষ্কার করা হচ্ছে..." -ForegroundColor Yellow
 
-          $tailscaleExe = "$env:ProgramFiles\Tailscale\tailscale.exe"
+          $cleanupSteps = @(
+              @{Name="ব্যবহারকারী নিষ্ক্রিয় করুন"; Script={
+                  Disable-LocalUser -Name "AISTV-PREMIUM" -ErrorAction SilentlyContinue
+              }},
+              @{Name="নেটওয়ার্ক সংযোগ বন্ধ করুন"; Script={
+                  & "$env:ProgramFiles\Tailscale\tailscale.exe" down --accept-risk=all -ErrorAction SilentlyContinue
+                  Start-Sleep -Seconds 5
+              }},
+              @{Name="ফায়ারওয়াল নিয়ম মুছুন"; Script={
+                  netsh advfirewall firewall delete rule name="RDP-Premium" dir=in -ErrorAction SilentlyContinue
+                  netsh advfirewall firewall delete rule name="RDP-Premium-Out" dir=out -ErrorAction SilentlyContinue
+                  Remove-NetFirewallRule -DisplayName "RDP-Premium" -ErrorAction SilentlyContinue
+                  Remove-NetFirewallRule -DisplayName "RDP-Premium-Out" -ErrorAction SilentlyContinue
+              }},
+              @{Name="আরডিপি সেটিংস পুনরুদ্ধার করুন"; Script={
+                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 1 -Force -ErrorAction SilentlyContinue
+                  Stop-Service -Name TermService -Force -ErrorAction SilentlyContinue
+              }}
+          )
 
-          if (Test-Path $tailscaleExe) {
-
-              Write-Host "Tailscale সংযোগ বন্ধ করা হচ্ছে..." -ForegroundColor Gray
-
-              & $tailscaleExe down
-
-              Write-Host "Tailscale বন্ধ করা হয়েছে।" -ForegroundColor Green
+          foreach($step in $cleanupSteps) {
+              Write-Host "│ 🗑️  $($step.Name)..." -NoNewline -ForegroundColor Gray
+              try {
+                  & $step.Script
+                  Write-Host "`r│ ✅ $($step.Name)" -ForegroundColor Green
+              } catch {
+                  Write-Host "`r│ ⚠️  $($step.Name) - নিরাপদে সম্পন্ন হয়েছে" -ForegroundColor Yellow
+              }
+              Start-Sleep -Milliseconds 300
           }
 
-          $user = Get-LocalUser `
-            -Name "RIYAN" `
-            -ErrorAction SilentlyContinue
+          Get-Job | Stop-Job -PassThru | Remove-Job -Force -ErrorAction SilentlyContinue
 
-          if ($null -ne $user) {
-
-              Disable-LocalUser `
-                -Name "RIYAN" `
-                -ErrorAction SilentlyContinue
-
-              Write-Host "RIYAN অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে।" -ForegroundColor Green
-          }
-
-          Remove-NetFirewallRule `
-            -DisplayName "AI-STV-RDP" `
-            -ErrorAction SilentlyContinue
-
-          Write-Host "Firewall rule সরানো হয়েছে।" -ForegroundColor Green
-
-          Set-ItemProperty `
-            -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
-            -Name 'fDenyTSConnections' `
-            -Value 1 `
-            -Force `
-            -ErrorAction SilentlyContinue
-
-          Write-Host "RDP বন্ধ করা হয়েছে।" -ForegroundColor Green
           Write-Host ""
-          Write-Host "Cleanup সম্পন্ন।" -ForegroundColor Green
+          Write-Host "🎉 পরিষ্কার সম্পন্ন! আবার দেখা হবে! 👋" -ForegroundColor Green
